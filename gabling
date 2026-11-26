@@ -1,0 +1,1101 @@
+(() => {
+  document.getElementById('sr-bibi-shrine-style')?.remove();
+  document.getElementById('sr-bibi-shrine-frame')?.remove();
+  document.getElementById('sr-bibi-shrine-font')?.remove();
+  document.getElementById('sr-bj-modal')?.remove();
+  document.getElementById('sr-he-modal')?.remove();
+  document.getElementById('sr-uno-modal')?.remove();
+
+  // 1. Load Israeli Editorial & UI Fonts (Frank Ruhl Libre & Rubik)
+  const fontLink = document.createElement('link');
+  fontLink.id = 'sr-bibi-shrine-font';
+  fontLink.rel = 'stylesheet';
+  fontLink.href = 'https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700&family=Rubik:wght@400;600;700&display=swap';
+  document.head.appendChild(fontLink);
+
+  // 2. Israeli Flag Background, Typography & Text-Safe Layering
+  const style = document.createElement('style');
+  style.id = 'sr-bibi-shrine-style';
+  style.textContent = `
+    html, body, #root {
+      background: linear-gradient(
+        180deg,
+        #0038b8 0%,
+        #002885 15%,
+        #f8fafc 15.5%,
+        #ffffff 84.5%,
+        #002885 85%,
+        #0038b8 100%
+      ) fixed !important;
+      font-family: 'Rubik', 'Segoe UI', system-ui, sans-serif !important;
+    }
+
+    /* Prevent inner divs from stacking white layers over text */
+    #root > div {
+      background: transparent !important;
+    }
+    #root div:not([id^="sr-"]) div:not([id^="sr-"]) {
+      background-color: transparent !important;
+    }
+
+    /* Soft translucent backing only on major containers so text stays crisp */
+    #root > div > div,
+    main,
+    article,
+    [class*="reader"],
+    [class*="passage"],
+    [class*="story"],
+    [class*="card"],
+    [class*="panel"] {
+      background-color: rgba(255, 255, 255, 0.72) !important;
+      border-color: #0038b8 !important;
+    }
+
+    /* Keep all text elements clearly legible with high contrast */
+    p, span, label, li, h1, h2, h3, h4, blockquote, div:not([id^="sr-"]) {
+      color: #0f172a !important;
+    }
+    p, h1, h2, h3, h4, blockquote, [class*="passage"], [class*="story"] {
+      font-family: 'Frank Ruhl Libre', Georgia, serif !important;
+    }
+
+    /* Style Sparx buttons in Israeli Blue with crisp white text */
+    #root button:not([id^="sr-"]),
+    #root [role="button"]:not([id^="sr-"]) {
+      background-color: #0038b8 !important;
+      color: #ffffff !important;
+      border: 2px solid #93c5fd !important;
+      box-shadow: 0 2px 8px rgba(0, 56, 184, 0.3) !important;
+    }
+    #root button:not([id^="sr-"]) *,
+    #root [role="button"]:not([id^="sr-"]) * {
+      color: #ffffff !important;
+      background-color: transparent !important;
+    }
+
+    @keyframes sr-candle-flicker {
+      0%, 100% { transform: scale(1) rotate(-2deg); opacity: 0.95; }
+      50% { transform: scale(1.12) rotate(2deg); opacity: 1; }
+    }
+    .sr-flame {
+      transform-origin: center bottom;
+      animation: sr-candle-flicker 0.8s infinite ease-in-out;
+    }
+
+    /* Shared In-Page Arcade Modal Styles */
+    .sr-game-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 999999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 18, 64, 0.68);
+      backdrop-filter: blur(3px);
+      font-family: 'Rubik', 'Segoe UI', sans-serif;
+    }
+    .sr-game-modal.open {
+      display: flex;
+    }
+    .sr-game-window {
+      width: min(500px, 94vw);
+      max-height: 90vh;
+      overflow-y: auto;
+      background: linear-gradient(160deg, #002885, #0038b8 65%, #0047d4);
+      border: 3px solid #facc15;
+      border-radius: 16px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+      color: #ffffff;
+    }
+    .sr-game-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: rgba(0, 16, 56, 0.58);
+      border-bottom: 2px solid rgba(250, 204, 21, 0.5);
+    }
+    .sr-game-title {
+      font-family: 'Frank Ruhl Libre', Georgia, serif;
+      font-size: 17px;
+      font-weight: 700;
+      color: #fde047;
+    }
+    .sr-game-body {
+      padding: 15px;
+    }
+    .sr-game-stats {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 10px;
+      padding: 9px 12px;
+      margin-bottom: 12px;
+      font-size: 12.5px;
+      font-weight: 700;
+    }
+    .sr-game-zone {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(147, 197, 253, 0.35);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 11px;
+    }
+    .sr-game-zone-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #dbeafe;
+      margin-bottom: 7px;
+      font-weight: 600;
+    }
+    .sr-game-cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      min-height: 62px;
+      align-items: center;
+    }
+    .sr-playing-card {
+      width: 44px;
+      height: 62px;
+      border-radius: 7px;
+      background: #ffffff;
+      color: #0f172a;
+      border: 2px solid #facc15;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 4px 5px;
+      font-weight: 700;
+      font-size: 11.5px;
+      line-height: 1;
+    }
+    .sr-playing-card.red {
+      color: #dc2626;
+    }
+    .sr-playing-card.hidden-card {
+      background: repeating-linear-gradient(
+        45deg,
+        #0038b8,
+        #0038b8 6px,
+        #facc15 6px,
+        #facc15 8px
+      );
+      color: transparent;
+    }
+    .sr-playing-card-center {
+      text-align: center;
+      font-size: 15px;
+    }
+    .sr-game-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+    .sr-game-btn {
+      flex: 1;
+      min-width: 74px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 2px solid #fde047;
+      background: #facc15;
+      color: #0f172a;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .sr-game-btn.secondary {
+      background: #1d4ed8;
+      color: #ffffff;
+      border-color: #93c5fd;
+    }
+    .sr-game-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .sr-game-status {
+      margin-top: 11px;
+      min-height: 20px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 12.5px;
+      color: #fde047;
+    }
+
+    /* UNO Specific Card Styles */
+    .sr-uno-card {
+      width: 48px;
+      height: 68px;
+      border-radius: 9px;
+      border: 2.5px solid #ffffff;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 4px 5px;
+      font-weight: 800;
+      font-size: 11px;
+      line-height: 1;
+      color: #ffffff;
+      cursor: pointer;
+      transition: transform 0.12s ease;
+    }
+    .sr-uno-card:hover:not(:disabled) {
+      transform: translateY(-4px);
+    }
+    .sr-uno-card.c-red { background: #dc2626; }
+    .sr-uno-card.c-blue { background: #0038b8; }
+    .sr-uno-card.c-green { background: #15803d; }
+    .sr-uno-card.c-yellow { background: #ca8a04; color: #0f172a; border-color: #fef08a; }
+    .sr-uno-card.c-wild { background: #1e293b; border-color: #facc15; color: #fde047; }
+    .sr-uno-card.c-back {
+      background: repeating-linear-gradient(
+        -45deg,
+        #002885,
+        #002885 6px,
+        #facc15 6px,
+        #facc15 8px
+      );
+      color: transparent;
+      cursor: default;
+    }
+  `;
+  document.head.appendChild(style);
+
+  // 3. Bottom-Left Shrine Card + Controls
+  const shrine = document.createElement('div');
+  shrine.id = 'sr-bibi-shrine-frame';
+  Object.assign(shrine.style, {
+    position: 'fixed',
+    bottom: '16px',
+    left: '16px',
+    zIndex: '999990',
+    width: '242px',
+    background: 'linear-gradient(145deg, #002885, #0038b8)',
+    border: '3px solid #facc15',
+    borderRadius: '14px',
+    padding: '12px',
+    boxShadow: '0 10px 30px rgba(0, 24, 80, 0.55), inset 0 0 15px rgba(250, 204, 21, 0.25)',
+    color: '#ffffff',
+    fontFamily: "'Frank Ruhl Libre', Georgia, serif",
+    textAlign: 'center',
+    userSelect: 'none'
+  });
+
+  shrine.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <span style="font-size:10px;letter-spacing:1.2px;color:#fde047;font-weight:700;">★ SHRINE OF BIBI ★</span>
+      <button id="sr-shrine-reset" style="background:rgba(255,255,255,0.18);color:#fff;border:1px solid rgba(255,255,255,0.4);border-radius:4px;padding:1px 6px;font-size:10px;cursor:pointer;">Reset</button>
+    </div>
+
+    <div style="position:relative;background:#ffffff;border-radius:8px;padding:8px;border:2px solid #fde047;margin-bottom:8px;">
+      <svg width="100%" height="78" viewBox="0 0 220 120" xmlns="http://www.w3.org/2000/svg">
+        <rect width="220" height="120" fill="#ffffff"/>
+        <rect y="8" width="220" height="16" fill="#0038b8"/>
+        <rect y="96" width="220" height="16" fill="#0038b8"/>
+        <polygon points="110,32 132,70 88,70" fill="none" stroke="#0038b8" stroke-width="4.5"/>
+        <polygon points="110,84 132,46 88,46" fill="none" stroke="#0038b8" stroke-width="4.5"/>
+        <rect x="26" y="68" width="10" height="24" rx="2" fill="#fef08a" stroke="#ca8a04" stroke-width="1"/>
+        <ellipse class="sr-flame" cx="31" cy="61" rx="4" ry="7" fill="#f97316"/>
+        <rect x="184" y="68" width="10" height="24" rx="2" fill="#fef08a" stroke="#ca8a04" stroke-width="1"/>
+        <ellipse class="sr-flame" cx="189" cy="61" rx="4" ry="7" fill="#f97316"/>
+      </svg>
+      <div style="color:#0038b8;font-weight:700;font-size:13.5px;margin-top:2px;">Benjamin Netanyahu</div>
+      <div style="color:#475569;font-size:10px;font-family:'Rubik',sans-serif;">Prime Minister of Israel</div>
+    </div>
+
+    <div style="display:flex;gap:6px;margin-bottom:6px;font-family:'Rubik',sans-serif;">
+      <button id="sr-shrine-copy" style="flex:1;background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:6px 8px;font-size:11px;font-weight:700;cursor:pointer;">
+        Copy Text
+      </button>
+      <button id="sr-shrine-jewmini" style="flex:1.2;background:#8b5cf6;color:#fff;border:none;border-radius:6px;padding:6px 8px;font-size:11px;font-weight:700;cursor:pointer;">
+        Send to Jewmini
+      </button>
+    </div>
+
+    <button id="sr-shrine-gamble" style="width:100%;margin-bottom:6px;background:#16a34a;color:#ffffff;border:2px solid #fde047;border-radius:6px;padding:6px 8px;font-family:'Rubik',sans-serif;font-weight:700;font-size:11.5px;cursor:pointer;">
+      ✡ Gamble (Israel Blackjack) ₪
+    </button>
+
+    <div style="display:flex;gap:6px;margin-bottom:6px;font-family:'Rubik',sans-serif;">
+      <button id="sr-shrine-holdem" style="flex:1;background:#0284c7;color:#ffffff;border:2px solid #fde047;border-radius:6px;padding:6px 6px;font-size:11px;font-weight:700;cursor:pointer;">
+        ♠ Hold 'Em ₪
+      </button>
+      <button id="sr-shrine-uno" style="flex:1;background:#dc2626;color:#ffffff;border:2px solid #fde047;border-radius:6px;padding:6px 6px;font-size:11px;font-weight:700;cursor:pointer;">
+        ★ UNO ₪
+      </button>
+    </div>
+
+    <a href="https://en.wikipedia.org/wiki/Bibi:_My_Story" target="_blank"
+       style="display:block;background:#facc15;color:#0f172a;text-decoration:none;font-family:'Rubik',sans-serif;font-weight:700;font-size:11px;padding:5px 8px;border-radius:6px;">
+      Read "Bibi: My Story" ↗
+    </a>
+  `;
+
+  document.body.appendChild(shrine);
+
+  // Shared Bankroll & Helpers
+  let balance = 1000;
+  const formatShillings = (n) => `${n.toLocaleString()} ₪`;
+  const suits = [
+    { sym: '✡', red: false },
+    { sym: '🕯️', red: true },
+    { sym: '☀️', red: true },
+    { sym: '🕊️', red: false }
+  ];
+  const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
+  function createShuffledDeck(decks = 1) {
+    const arr = [];
+    for (let d = 0; d < decks; d++) {
+      for (const s of suits) {
+        for (const r of ranks) {
+          arr.push({ rank: r, suit: s.sym, red: s.red });
+        }
+      }
+    }
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function renderStandardCard(card, hidden = false) {
+    const div = document.createElement('div');
+    if (hidden) {
+      div.className = 'sr-playing-card hidden-card';
+      div.textContent = '?';
+      return div;
+    }
+    div.className = `sr-playing-card${card.red ? ' red' : ''}`;
+    div.innerHTML = `
+      <span>${card.rank}</span>
+      <span class="sr-playing-card-center">${card.suit}</span>
+      <span style="align-self:flex-end;">${card.rank}</span>
+    `;
+    return div;
+  }
+
+  const syncAllBalances = () => {
+    document.querySelectorAll('.sr-shared-balance').forEach((el) => {
+      el.textContent = formatShillings(balance);
+    });
+  };
+
+  // =========================================================================
+  // 4. BLACKJACK MODAL
+  // =========================================================================
+  const bjModal = document.createElement('div');
+  bjModal.id = 'sr-bj-modal';
+  bjModal.className = 'sr-game-modal';
+  bjModal.innerHTML = `
+    <div class="sr-game-window" role="dialog" aria-modal="true" aria-label="Israel Blackjack">
+      <div class="sr-game-header">
+        <span class="sr-game-title">✡ Tel Aviv Royal Blackjack ✡</span>
+        <button id="sr-bj-close" style="background:rgba(255,255,255,0.18);color:#fff;border:1px solid rgba(255,255,255,0.45);border-radius:6px;padding:3px 9px;font-size:12px;font-weight:700;cursor:pointer;">✕</button>
+      </div>
+      <div class="sr-game-body">
+        <div class="sr-game-stats">
+          <div>Balance: <span class="sr-shared-balance" style="color:#fde047;">1,000 ₪</span></div>
+          <div>Current Bet: <span id="sr-bj-active-bet" style="color:#93c5fd;">0 ₪</span></div>
+        </div>
+        <div class="sr-game-zone">
+          <div class="sr-game-zone-label">
+            <span>House (Bank of Israel)</span>
+            <span id="sr-bj-dealer-score">?</span>
+          </div>
+          <div id="sr-bj-dealer-cards" class="sr-game-cards"></div>
+        </div>
+        <div class="sr-game-zone">
+          <div class="sr-game-zone-label">
+            <span>Your Hand</span>
+            <span id="sr-bj-player-score">0</span>
+          </div>
+          <div id="sr-bj-player-cards" class="sr-game-cards"></div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:11px;font-size:12.5px;">
+          <label for="sr-bj-bet-input" style="font-weight:700;color:#fde047;">Wager (₪):</label>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input id="sr-bj-bet-input" type="number" min="10" step="10" value="100" style="width:92px;padding:5px 8px;border-radius:6px;border:2px solid #facc15;background:#fff;color:#0f172a;font-weight:700;" />
+            <button id="sr-bj-half" class="sr-game-btn secondary" style="min-width:auto;padding:5px 8px;">½</button>
+            <button id="sr-bj-max" class="sr-game-btn secondary" style="min-width:auto;padding:5px 8px;">Max</button>
+          </div>
+        </div>
+        <div class="sr-game-actions">
+          <button id="sr-bj-deal" class="sr-game-btn">Deal Hand</button>
+          <button id="sr-bj-hit" class="sr-game-btn secondary" disabled>Hit</button>
+          <button id="sr-bj-stand" class="sr-game-btn secondary" disabled>Stand</button>
+          <button id="sr-bj-refill" class="sr-game-btn secondary" style="display:none;">Claim 1,000 ₪ Bailout</button>
+        </div>
+        <div id="sr-bj-status" class="sr-game-status">Place your bet in Shillings and deal!</div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(bjModal);
+
+  let bjDeck = [];
+  let bjPlayer = [];
+  let bjDealer = [];
+  let bjBet = 0;
+  let bjActive = false;
+
+  const bjDraw = () => {
+    if (bjDeck.length < 15) bjDeck = createShuffledDeck(4);
+    return bjDeck.pop();
+  };
+
+  const bjScore = (hand) => {
+    let total = 0;
+    let aces = 0;
+    for (const c of hand) {
+      if (c.rank === 'A') { total += 11; aces++; }
+      else if (['K', 'Q', 'J'].includes(c.rank)) total += 10;
+      else total += parseInt(c.rank, 10);
+    }
+    while (total > 21 && aces > 0) { total -= 10; aces--; }
+    return total;
+  };
+
+  function bjUpdateUI(revealDealer = false) {
+    syncAllBalances();
+    document.getElementById('sr-bj-active-bet').textContent = formatShillings(bjBet);
+
+    const pCardsEl = document.getElementById('sr-bj-player-cards');
+    pCardsEl.innerHTML = '';
+    bjPlayer.forEach((c) => pCardsEl.appendChild(renderStandardCard(c, false)));
+    document.getElementById('sr-bj-player-score').textContent = bjPlayer.length ? `${bjScore(bjPlayer)}` : '0';
+
+    const dCardsEl = document.getElementById('sr-bj-dealer-cards');
+    dCardsEl.innerHTML = '';
+    bjDealer.forEach((c, i) => dCardsEl.appendChild(renderStandardCard(c, !revealDealer && i === 1 && bjActive)));
+    const dScoreEl = document.getElementById('sr-bj-dealer-score');
+    if (!bjDealer.length) dScoreEl.textContent = '?';
+    else if (!revealDealer && bjActive) dScoreEl.textContent = `${bjScore([bjDealer[0]])} + ?`;
+    else dScoreEl.textContent = `${bjScore(bjDealer)}`;
+
+    document.getElementById('sr-bj-deal').disabled = bjActive || balance <= 0;
+    document.getElementById('sr-bj-hit').disabled = !bjActive;
+    document.getElementById('sr-bj-stand').disabled = !bjActive;
+    document.getElementById('sr-bj-half').disabled = bjActive || balance <= 0;
+    document.getElementById('sr-bj-max').disabled = bjActive || balance <= 0;
+    document.getElementById('sr-bj-bet-input').disabled = bjActive || balance <= 0;
+    document.getElementById('sr-bj-refill').style.display = !bjActive && balance === 0 ? 'inline-block' : 'none';
+  }
+
+  function bjEnd(msg, mult = 0) {
+    bjActive = false;
+    if (mult > 0) balance += Math.floor(bjBet * mult);
+    bjBet = 0;
+    document.getElementById('sr-bj-status').textContent = msg;
+    bjUpdateUI(true);
+  }
+
+  document.getElementById('sr-bj-half').onclick = () => {
+    document.getElementById('sr-bj-bet-input').value = Math.max(10, Math.floor(balance / 2));
+  };
+  document.getElementById('sr-bj-max').onclick = () => {
+    document.getElementById('sr-bj-bet-input').value = Math.max(10, balance);
+  };
+  document.getElementById('sr-bj-refill').onclick = () => {
+    balance = 1000;
+    document.getElementById('sr-bj-bet-input').value = 100;
+    document.getElementById('sr-bj-status').textContent = '1,000 ₪ restored!';
+    bjUpdateUI(false);
+  };
+  document.getElementById('sr-bj-deal').onclick = () => {
+    const wager = parseInt(document.getElementById('sr-bj-bet-input').value, 10);
+    if (isNaN(wager) || wager <= 0 || wager > balance) {
+      document.getElementById('sr-bj-status').textContent = 'Invalid wager amount.';
+      return;
+    }
+    balance -= wager;
+    bjBet = wager;
+    bjActive = true;
+    bjPlayer = [bjDraw(), bjDraw()];
+    bjDealer = [bjDraw(), bjDraw()];
+    document.getElementById('sr-bj-status').textContent = 'Hit or Stand?';
+    bjUpdateUI(false);
+
+    const ps = bjScore(bjPlayer);
+    const ds = bjScore(bjDealer);
+    if (ps === 21 || ds === 21) {
+      if (ps === 21 && ds === 21) bjEnd(`Push! ${formatShillings(bjBet)} returned.`, 1);
+      else if (ps === 21) bjEnd(`Mazal Tov! Blackjack! +${formatShillings(Math.floor(bjBet * 2.5))}!`, 2.5);
+      else bjEnd('House has Blackjack.', 0);
+    }
+  };
+  document.getElementById('sr-bj-hit').onclick = () => {
+    if (!bjActive) return;
+    bjPlayer.push(bjDraw());
+    const ps = bjScore(bjPlayer);
+    bjUpdateUI(false);
+    if (ps > 21) bjEnd(`Bust at ${ps}! Lost ${formatShillings(bjBet)}.`, 0);
+    else if (ps === 21) document.getElementById('sr-bj-stand').click();
+  };
+  document.getElementById('sr-bj-stand').onclick = () => {
+    if (!bjActive) return;
+    while (bjScore(bjDealer) < 17) bjDealer.push(bjDraw());
+    const ps = bjScore(bjPlayer);
+    const ds = bjScore(bjDealer);
+    if (ds > 21) bjEnd(`House busts (${ds})! You win ${formatShillings(bjBet * 2)}!`, 2);
+    else if (ps > ds) bjEnd(`You win (${ps} vs ${ds})! +${formatShillings(bjBet * 2)}!`, 2);
+    else if (ps < ds) bjEnd(`House wins (${ds} vs ${ps}).`, 0);
+    else bjEnd(`Push at ${ps}! ${formatShillings(bjBet)} returned.`, 1);
+  };
+  document.getElementById('sr-shrine-gamble').onclick = () => {
+    bjModal.classList.add('open');
+    bjUpdateUI(false);
+  };
+  document.getElementById('sr-bj-close').onclick = () => bjModal.classList.remove('open');
+  bjModal.onclick = (e) => { if (e.target === bjModal) bjModal.classList.remove('open'); };
+
+  // =========================================================================
+  // 5. TEXAS HOLD 'EM MODAL (Heads-Up vs Jerusalem Bot)
+  // =========================================================================
+  const heModal = document.createElement('div');
+  heModal.id = 'sr-he-modal';
+  heModal.className = 'sr-game-modal';
+  heModal.innerHTML = `
+    <div class="sr-game-window" role="dialog" aria-modal="true" aria-label="Israel Texas Hold'em">
+      <div class="sr-game-header">
+        <span class="sr-game-title">♠ Jerusalem Texas Hold 'Em ♠</span>
+        <button id="sr-he-close" style="background:rgba(255,255,255,0.18);color:#fff;border:1px solid rgba(255,255,255,0.45);border-radius:6px;padding:3px 9px;font-size:12px;font-weight:700;cursor:pointer;">✕</button>
+      </div>
+      <div class="sr-game-body">
+        <div class="sr-game-stats">
+          <div>Balance: <span class="sr-shared-balance" style="color:#fde047;">1,000 ₪</span></div>
+          <div>Pot: <span id="sr-he-pot" style="color:#86efac;">0 ₪</span></div>
+          <div>Stage: <span id="sr-he-stage" style="color:#93c5fd;">Pre-Hand</span></div>
+        </div>
+        <div class="sr-game-zone">
+          <div class="sr-game-zone-label">
+            <span>Opponent (Jerusalem Pro)</span>
+            <span id="sr-he-opp-label">Hole Cards</span>
+          </div>
+          <div id="sr-he-opp-cards" class="sr-game-cards"></div>
+        </div>
+        <div class="sr-game-zone">
+          <div class="sr-game-zone-label">
+            <span>Community Board</span>
+            <span id="sr-he-board-label">0 / 5</span>
+          </div>
+          <div id="sr-he-board-cards" class="sr-game-cards"></div>
+        </div>
+        <div class="sr-game-zone">
+          <div class="sr-game-zone-label">
+            <span>Your Hole Cards</span>
+            <span id="sr-he-hand-rank">-</span>
+          </div>
+          <div id="sr-he-player-cards" class="sr-game-cards"></div>
+        </div>
+        <div class="sr-game-actions">
+          <button id="sr-he-deal" class="sr-game-btn">New Hand (50 ₪)</button>
+          <button id="sr-he-checkcall" class="sr-game-btn secondary" disabled>Check / Call</button>
+          <button id="sr-he-raise" class="sr-game-btn secondary" disabled>Raise +100 ₪</button>
+          <button id="sr-he-fold" class="sr-game-btn secondary" disabled>Fold</button>
+          <button id="sr-he-refill" class="sr-game-btn secondary" style="display:none;">Claim 1,000 ₪ Bailout</button>
+        </div>
+        <div id="sr-he-status" class="sr-game-status">Ante up 50 ₪ to start a Texas Hold 'Em hand!</div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(heModal);
+
+  const rankOrder = { '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14 };
+
+  function evaluateFive(cards) {
+    const vals = cards.map((c) => rankOrder[c.rank]).sort((a, b) => b - a);
+    const counts = {};
+    vals.forEach((v) => { counts[v] = (counts[v] || 0) + 1; });
+    const groups = Object.entries(counts)
+      .map(([v, cnt]) => ({ val: Number(v), cnt }))
+      .sort((a, b) => b.cnt - a.cnt || b.val - a.val);
+
+    const isFlush = cards.every((c) => c.suit === cards[0].suit);
+    const uniqueSorted = [...new Set(vals)].sort((a, b) => b - a);
+    let isStraight = false;
+    let straightHigh = 0;
+    if (uniqueSorted.length === 5) {
+      if (uniqueSorted[0] - uniqueSorted[4] === 4) {
+        isStraight = true;
+        straightHigh = uniqueSorted[0];
+      } else if (uniqueSorted.join(',') === '14,5,4,3,2') {
+        isStraight = true;
+        straightHigh = 5;
+      }
+    }
+
+    if (isFlush && isStraight) return { category: 8, name: straightHigh === 14 ? 'Royal Flush' : 'Straight Flush', kickers: [straightHigh] };
+    if (groups[0].cnt === 4) return { category: 7, name: 'Four of a Kind', kickers: [groups[0].val, groups[1].val] };
+    if (groups[0].cnt === 3 && groups[1].cnt === 2) return { category: 6, name: 'Full House', kickers: [groups[0].val, groups[1].val] };
+    if (isFlush) return { category: 5, name: 'Flush', kickers: vals };
+    if (isStraight) return { category: 4, name: 'Straight', kickers: [straightHigh] };
+    if (groups[0].cnt === 3) return { category: 3, name: 'Three of a Kind', kickers: [groups[0].val, ...groups.slice(1).map((g) => g.val)] };
+    if (groups[0].cnt === 2 && groups[1].cnt === 2) return { category: 2, name: 'Two Pair', kickers: [groups[0].val, groups[1].val, groups[2].val] };
+    if (groups[0].cnt === 2) return { category: 1, name: 'One Pair', kickers: [groups[0].val, ...groups.slice(1).map((g) => g.val)] };
+    return { category: 0, name: 'High Card', kickers: vals };
+  }
+
+  function compareEval(a, b) {
+    if (a.category !== b.category) return a.category - b.category;
+    const len = Math.max(a.kickers.length, b.kickers.length);
+    for (let i = 0; i < len; i++) {
+      const ka = a.kickers[i] || 0;
+      const kb = b.kickers[i] || 0;
+      if (ka !== kb) return ka - kb;
+    }
+    return 0;
+  }
+
+  function evaluateBestSeven(sevenCards) {
+    if (sevenCards.length < 5) return { category: 0, name: 'Hole Cards', kickers: [] };
+    let best = null;
+    const n = sevenCards.length;
+    for (let i = 0; i < n - 4; i++) {
+      for (let j = i + 1; j < n - 3; j++) {
+        for (let k = j + 1; k < n - 2; k++) {
+          for (let l = k + 1; l < n - 1; l++) {
+            for (let m = l + 1; m < n; m++) {
+              const ev = evaluateFive([sevenCards[i], sevenCards[j], sevenCards[k], sevenCards[l], sevenCards[m]]);
+              if (!best || compareEval(ev, best) > 0) best = ev;
+            }
+          }
+        }
+      }
+    }
+    return best;
+  }
+
+  let heDeck = [];
+  let hePlayer = [];
+  let heOpp = [];
+  let heBoard = [];
+  let hePot = 0;
+  let heStage = 'idle'; // idle | preflop | flop | turn | river | showdown
+
+  function heUpdateUI(revealOpp = false) {
+    syncAllBalances();
+    document.getElementById('sr-he-pot').textContent = formatShillings(hePot);
+    const stageMap = {
+      idle: 'Pre-Hand',
+      preflop: 'Pre-Flop',
+      flop: 'Flop',
+      turn: 'Turn',
+      river: 'River',
+      showdown: 'Showdown'
+    };
+    document.getElementById('sr-he-stage').textContent = stageMap[heStage] || 'Pre-Hand';
+
+    const oppEl = document.getElementById('sr-he-opp-cards');
+    oppEl.innerHTML = '';
+    heOpp.forEach((c) => oppEl.appendChild(renderStandardCard(c, !revealOpp)));
+    document.getElementById('sr-he-opp-label').textContent = revealOpp && heOpp.length
+      ? evaluateBestSeven([...heOpp, ...heBoard]).name
+      : 'Hidden';
+
+    const boardEl = document.getElementById('sr-he-board-cards');
+    boardEl.innerHTML = '';
+    heBoard.forEach((c) => boardEl.appendChild(renderStandardCard(c, false)));
+    document.getElementById('sr-he-board-label').textContent = `${heBoard.length} / 5`;
+
+    const pEl = document.getElementById('sr-he-player-cards');
+    pEl.innerHTML = '';
+    hePlayer.forEach((c) => pEl.appendChild(renderStandardCard(c, false)));
+    document.getElementById('sr-he-hand-rank').textContent = hePlayer.length
+      ? evaluateBestSeven([...hePlayer, ...heBoard]).name
+      : '-';
+
+    const inHand = ['preflop', 'flop', 'turn', 'river'].includes(heStage);
+    document.getElementById('sr-he-deal').disabled = inHand || balance < 50;
+    document.getElementById('sr-he-checkcall').disabled = !inHand;
+    document.getElementById('sr-he-raise').disabled = !inHand || balance < 100;
+    document.getElementById('sr-he-fold').disabled = !inHand;
+    document.getElementById('sr-he-refill').style.display = !inHand && balance === 0 ? 'inline-block' : 'none';
+  }
+
+  function heShowdown() {
+    heStage = 'showdown';
+    const pEval = evaluateBestSeven([...hePlayer, ...heBoard]);
+    const oEval = evaluateBestSeven([...heOpp, ...heBoard]);
+    const cmp = compareEval(pEval, oEval);
+    let msg = '';
+    if (cmp > 0) {
+      balance += hePot;
+      msg = `You win ${formatShillings(hePot)} with ${pEval.name} vs ${oEval.name}!`;
+    } else if (cmp < 0) {
+      msg = `Opponent wins ${formatShillings(hePot)} with ${oEval.name} vs ${pEval.name}.`;
+    } else {
+      const half = Math.floor(hePot / 2);
+      balance += half;
+      msg = `Split pot (${pEval.name})! You get ${formatShillings(half)}.`;
+    }
+    hePot = 0;
+    document.getElementById('sr-he-status').textContent = msg;
+    heUpdateUI(true);
+  }
+
+  function heAdvanceStage() {
+    if (heStage === 'preflop') {
+      heStage = 'flop';
+      heBoard.push(heDeck.pop(), heDeck.pop(), heDeck.pop());
+      document.getElementById('sr-he-status').textContent = 'Flop dealt! Check/Call, Raise +100 ₪, or Fold.';
+    } else if (heStage === 'flop') {
+      heStage = 'turn';
+      heBoard.push(heDeck.pop());
+      document.getElementById('sr-he-status').textContent = 'Turn card dealt! Make your move.';
+    } else if (heStage === 'turn') {
+      heStage = 'river';
+      heBoard.push(heDeck.pop());
+      document.getElementById('sr-he-status').textContent = 'River card dealt! Final betting round.';
+    } else if (heStage === 'river') {
+      heShowdown();
+      return;
+    }
+    heUpdateUI(false);
+  }
+
+  document.getElementById('sr-he-deal').onclick = () => {
+    if (balance < 50) return;
+    heDeck = createShuffledDeck(1);
+    balance -= 50;
+    hePot = 100; // 50 ₪ player ante + 50 ₪ bot ante
+    hePlayer = [heDeck.pop(), heDeck.pop()];
+    heOpp = [heDeck.pop(), heDeck.pop()];
+    heBoard = [];
+    heStage = 'preflop';
+    document.getElementById('sr-he-status').textContent = 'Pre-flop: Check/Call to see the Flop, or Raise +100 ₪.';
+    heUpdateUI(false);
+  };
+
+  document.getElementById('sr-he-checkcall').onclick = () => {
+    heAdvanceStage();
+  };
+
+  document.getElementById('sr-he-raise').onclick = () => {
+    const add = Math.min(100, balance);
+    balance -= add;
+    hePot += add * 2; // Bot matches raise
+    heAdvanceStage();
+  };
+
+  document.getElementById('sr-he-fold').onclick = () => {
+    heStage = 'idle';
+    hePot = 0;
+    document.getElementById('sr-he-status').textContent = 'You folded. Deal a new hand when ready.';
+    heUpdateUI(true);
+  };
+
+  document.getElementById('sr-he-refill').onclick = () => {
+    balance = 1000;
+    document.getElementById('sr-he-status').textContent = '1,000 ₪ restored!';
+    heUpdateUI(false);
+  };
+
+  document.getElementById('sr-shrine-holdem').onclick = () => {
+    heModal.classList.add('open');
+    heUpdateUI(heStage === 'showdown');
+  };
+  document.getElementById('sr-he-close').onclick = () => heModal.classList.remove('open');
+  heModal.onclick = (e) => { if (e.target === heModal) heModal.classList.remove('open'); };
+
+  // =========================================================================
+  // 6. UNO MODAL (Win 150 ₪ per round on 50 ₪ entry)
+  // =========================================================================
+  const unoModal = document.createElement('div');
+  unoModal.id = 'sr-uno-modal';
+  unoModal.className = 'sr-game-modal';
+  unoModal.innerHTML = `
+    <div class="sr-game-window" role="dialog" aria-modal="true" aria-label="Israel UNO">
+      <div class="sr-game-header">
+        <span class="sr-game-title">★ Tel Aviv UNO Table ★</span>
+        <button id="sr-uno-close" style="background:rgba(255,255,255,0.18);color:#fff;border:1px solid rgba(255,255,255,0.45);border-radius:6px;padding:3px 9px;font-size:12px;font-weight:700;cursor:pointer;">✕</button>
+      </div>
+      <div class="sr-game-body">
+        <div class="sr-game-stats">
+          <div>Balance: <span class="sr-shared-balance" style="color:#fde047;">1,000 ₪</span></div>
+          <div>Round Prize: <span style="color:#86efac;">150 ₪</span> (50 ₪ entry)</div>
+          <div>Active Color: <span id="sr-uno-color" style="color:#fde047;">-</span></div>
+        </div>
+        <div class="sr-game-zone">
+          <div class="sr-game-zone-label">
+            <span>Bot Hand</span>
+            <span id="sr-uno-bot-count">0 cards</span>
+          </div>
+          <div id="sr-uno-bot-cards" class="sr-game-cards"></div>
+        </div>
+        <div class="sr-game-zone">
+          <div class="sr-game-zone-label">
+            <span>Discard Pile</span>
+            <span id="sr-uno-top-label">-</span>
+          </div>
+          <div id="sr-uno-pile" class="sr-game-cards"></div>
+        </div>
+        <div class="sr-game-zone">
+          <div class="sr-game-zone-label">
+            <span>Your Cards (Click a playable card)</span>
+            <span id="sr-uno-player-count">0 cards</span>
+          </div>
+          <div id="sr-uno-player-cards" class="sr-game-cards"></div>
+        </div>
+        <div class="sr-game-actions">
+          <button id="sr-uno-start" class="sr-game-btn">Start Round (50 ₪)</button>
+          <button id="sr-uno-draw" class="sr-game-btn secondary" disabled>Draw Card</button>
+          <button id="sr-uno-refill" class="sr-game-btn secondary" style="display:none;">Claim 1,000 ₪ Bailout</button>
+        </div>
+        <div id="sr-uno-status" class="sr-game-status">Pay 50 ₪ to play UNO — empty your hand first to win 150 ₪!</div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(unoModal);
+
+  const unoColors = ['red', 'blue', 'green', 'yellow'];
+  const unoValues = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'Skip', '+2'];
+  let unoDeck = [];
+  let unoDiscard = [];
+  let unoPlayer = [];
+  let unoBot = [];
+  let unoActiveColor = 'blue';
+  let unoActive = false;
+
+  function buildUnoDeck() {
+    const d = [];
+    for (const c of unoColors) {
+      for (const v of unoValues) {
+        d.push({ color: c, value: v, wild: false });
+        if (v !== '0') d.push({ color: c, value: v, wild: false });
+      }
+    }
+    for (let w = 0; w < 4; w++) {
+      d.push({ color: 'wild', value: 'WILD', wild: true });
+      d.push({ color: 'wild', value: '+4', wild: true });
+    }
+    for (let i = d.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [d[i], d[j]] = [d[j], d[i]];
+    }
+    return d;
+  }
+
+  function unoDrawOne() {
+    if (!unoDeck.length) {
+      const top = unoDiscard.pop();
+      unoDeck = unoDiscard.filter((c) => !c.wild);
+      if (!unoDeck.length) unoDeck = buildUnoDeck();
+      for (let i = unoDeck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [unoDeck[i], unoDeck[j]] = [unoDeck[j], unoDeck[i]];
+      }
+      unoDiscard = top ? [top] : [];
+    }
+    return unoDeck.pop();
+  }
+
+  function unoCanPlay(card) {
+    const top = unoDiscard[unoDiscard.length - 1];
+    if (!top) return true;
+    if (card.wild) return true;
+    return card.color === unoActiveColor || card.value === top.value;
+  }
+
+  function renderUnoCard(card, playable = false, onClick = null) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `sr-uno-card c-${card.color}`;
+    btn.disabled = !playable;
+    btn.style.opacity = playable || !onClick ? '1' : '0.5';
+    btn.innerHTML = `
+      <span>${card.value}</span>
+      <span style="text-align:center;font-size:12px;">${card.color.toUpperCase()}</span>
+      <span style="align-self:flex-end;">${card.value}</span>
+    `;
+    if (onClick) btn.onclick = onClick;
+    return btn;
+  }
+
+  function unoUpdateUI() {
+    syncAllBalances();
+    document.getElementById('sr-uno-color').textContent = unoActive ? unoActiveColor.toUpperCase() : '-';
+    document.getElementById('sr-uno-bot-count').textContent = `${unoBot.length} cards`;
+    document.getElementById('sr-uno-player-count').textContent = `${unoPlayer.length} cards`;
+
+    const botEl = document.getElementById('sr-uno-bot-cards');
+    botEl.innerHTML = '';
+    for (let i = 0; i < Math.min(unoBot.length, 8); i++) {
+      const back = document.createElement('div');
+      back.className = 'sr-uno-card c-back';
+      botEl.appendChild(back);
+    }
+
+    const pileEl = document.getElementById('sr-uno-pile');
+    pileEl.innerHTML = '';
+    const top = unoDiscard[unoDiscard.length - 1];
+    if (top) pileEl.appendChild(renderUnoCard(top, false, null));
+    document.getElementById('sr-uno-top-label').textContent = top ? `${top.color.toUpperCase()} ${top.value}` : '-';
+
+    const pEl = document.getElementById('sr-uno-player-cards');
+    pEl.innerHTML = '';
+    unoPlayer.forEach((card, idx) => {
+      const can = unoActive && unoCanPlay(card);
+      pEl.appendChild(renderUnoCard(card, can, () => unoPlayCard(idx)));
+    });
+
+    document.getElementById('sr-uno-start').disabled = unoActive || balance < 50;
+    document.getElementById('sr-uno-draw').disabled = !unoActive;
+    document.getElementById('sr-uno-refill').style.display = !unoActive && balance === 0 ? 'inline-block' : 'none';
+  }
+
+  function unoFinishRound(playerWon) {
+    unoActive = false;
+    if (playerWon) {
+      balance += 150;
+      document.getElementById('sr-uno-status').textContent = 'UNO! You emptied your hand and won 150 ₪!';
+    } else {
+      document.getElementById('sr-uno-status').textContent = 'Bot went out first! Start another round for 50 ₪.';
+    }
+    unoUpdateUI();
+  }
+
+  function unoBotTurn() {
+    if (!unoActive) return;
+    const playIdx = unoBot.findIndex((c) => unoCanPlay(c));
+    if (playIdx !== -1) {
+      const chosen = unoBot.splice(playIdx, 1)[0];
+      unoDiscard.push(chosen);
+      unoActiveColor = chosen.wild ? unoColors[Math.floor(Math.random() * unoColors.length)] : chosen.color;
+
+      if (!unoBot.length) {
+        unoFinishRound(false);
+        return;
+      }
+
+      if (chosen.value === '+2') {
+        unoPlayer.push(unoDrawOne(), unoDrawOne());
+        document.getElementById('sr-uno-status').textContent = `Bot played +2 (${unoActiveColor.toUpperCase()})! You drew 2 cards.`;
+      } else if (chosen.value === '+4') {
+        unoPlayer.push(unoDrawOne(), unoDrawOne(), unoDrawOne(), unoDrawOne());
+        document.getElementById('sr-uno-status').textContent = `Bot played Wild +4 (${unoActiveColor.toUpperCase()})! You drew 4 cards.`;
+      } else if (chosen.value === 'Skip') {
+        document.getElementById('sr-uno-status').textContent = `Bot played Skip (${unoActiveColor.toUpperCase()})! Your turn again.`;
+        unoUpdateUI();
+        return;
+      } else {
+        document.getElementById('sr-uno-status').textContent = `Bot played ${chosen.value} (${unoActiveColor.toUpperCase()}). Your turn!`;
+      }
+    } else {
+      unoBot.push(unoDrawOne());
+      document.getElementById('sr-uno-status').textContent = 'Bot drew a card. Your turn!';
+    }
+    unoUpdateUI();
+  }
+
+  function unoPlayCard(idx) {
+    if (!unoActive) return;
+    const card = unoPlayer[idx];
+    if (!unoCanPlay(card)) return;
+
+    unoPlayer.splice(idx, 1);
+    unoDiscard.push(card);
+    unoActiveColor = card.wild ? unoColors[Math.floor(Math.random() * unoColors.length)] : card.color;
+
+    if (!unoPlayer.length) {
+      unoFinishRound(true);
+      return;
+    }
+
+    if (card.value === '+2') {
+      unoBot.push(unoDrawOne(), unoDrawOne());
+      document.getElementById('sr-uno-status').textContent = `You played +2! Bot drew 2 cards. Your turn again!`;
+      unoUpdateUI();
+      return;
+    }
+    if (card.value === '+4') {
+      unoBot.push(unoDrawOne(), unoDrawOne(), unoDrawOne(), unoDrawOne());
+      document.getElementById('sr-uno-status').textContent = `You played Wild +4 (${unoActiveColor.toUpperCase()})! Bot drew 4 cards.`;
+      unoUpdateUI();
+      return;
+    }
+    if (card.value === 'Skip') {
+      document.getElementById('sr-uno-status').textContent = `You skipped Bot! Play again!`;
+      unoUpdateUI();
+      return;
+    }
+
+    unoUpdateUI();
+    setTimeout(unoBotTurn, 350);
+  }
+
+  document.getElementById('sr-uno-start').onclick = () => {
+    if (balance < 50) return;
+    balance -= 50;
+    unoDeck = buildUnoDeck();
+    unoPlayer = Array.from({ length: 7 }, () => unoDrawOne());
+    unoBot = Array.from({ length: 7 }, () => unoDrawOne());
+    let first = unoDrawOne();
+    while (first.wild) first = unoDrawOne();
+    unoDiscard = [first];
+    unoActiveColor = first.color;
+    unoActive = true;
+    document.getElementById('sr-uno-status').textContent = `Round started! Match ${unoActiveColor.toUpperCase()} or ${first.value}.`;
+    unoUpdateUI();
+  };
+
+  document.getElementById('sr-uno-draw').onclick = () => {
+    if (!unoActive) return;
+    unoPlayer.push(unoDrawOne());
+    document.getElementById('sr-uno-status').textContent = 'You drew a card. Bot takes its turn...';
+    unoUpdateUI();
+    setTimeout(unoBotTurn, 350);
+  };
+
+  document.getElementById('sr-uno-refill').onclick = () => {
+    balance = 1000;
+    document.getElementById('sr-uno-status').textContent = '1,000 ₪ restored!';
+    unoUpdateUI();
+  };
+
+  document.getElementById('sr-shrine-uno').onclick = () => {
+    unoModal.classList.add('open');
+    unoUpdateUI();
+  };
+  document.getElementById('sr-uno-close').onclick = () => unoModal.classList.remove('open');
+  unoModal.onclick = (e) => { if (e.target === unoModal) unoModal.classList.remove('open'); };
+
+  // =========================================================================
+  // 7. EXISTING SHRINE BUTTON HANDLERS
+  // =========================================================================
+  const getCleanText = () =>
+    document.body.innerText
+      .split('\n')
+      .map(l => l.trim())
+      .filter(Boolean)
+      .join('\n');
+
+  const copyBtn = document.getElementById('sr-shrine-copy');
+  copyBtn.onclick = async () => {
+    await navigator.clipboard.writeText(getCleanText());
+    copyBtn.textContent = 'Copied!';
+    setTimeout(() => (copyBtn.textContent = 'Copy Text'), 1500);
+  };
+
+  const jewminiBtn = document.getElementById('sr-shrine-jewmini');
+  jewminiBtn.onclick = async () => {
+    await navigator.clipboard.writeText(getCleanText());
+    jewminiBtn.textContent = 'Sent!';
+    window.open('https://gemini.google.com/app', '_blank');
+    setTimeout(() => (jewminiBtn.textContent = 'Send to Jewmini'), 1500);
+  };
+
+  document.getElementById('sr-shrine-reset').onclick = () => {
+    style.remove();
+    shrine.remove();
+    fontLink.remove();
+    bjModal.remove();
+    heModal.remove();
+    unoModal.remove();
+  };
+})();
