@@ -1,0 +1,2 @@
+# Jewmini
+Sparx reader jewmini
